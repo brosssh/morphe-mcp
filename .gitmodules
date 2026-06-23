@@ -1,0 +1,15 @@
+[submodule "official-patches"]
+	path = official-patches
+	url = https://github.com/morpheapp/morphe-patches
+[submodule "official-patches-library"]
+	path = official-patches-library
+	url = https://github.com/morpheapp/morphe-patches-library
+[submodule "brosssh-patches"]
+	path = brosssh-patches
+	url = https://github.com/brosssh/morphe-patches
+[submodule "hoodles-patches"]
+	path = hoodles-patches
+	url = https://github.com/hoo-dles/morphe-patches
+[submodule "official-patcher"]
+	path = official-patcher
+	url = https://github.com/morpheapp/morphe-patcher
