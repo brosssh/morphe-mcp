@@ -80,5 +80,9 @@ def docs_read(name: str) -> str:
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print(f"Starting Morphe MCP server on {HOST}:{PORT}")
-    mcp.run(transport="sse")
+    import sys
+    if "--sse" in sys.argv:
+        print(f"Starting SSE on {HOST}:{PORT}")
+        mcp.run(transport="sse")
+    else:
+        mcp.run()
