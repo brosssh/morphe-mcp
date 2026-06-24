@@ -5,4 +5,5 @@ requires-python = ">=3.11"
 dependencies = [
     "mcp[cli]",
     "python-dotenv",
+    "fastmcp"
 ]
