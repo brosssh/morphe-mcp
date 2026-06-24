@@ -20,7 +20,8 @@ def repo_read_file(repo: str, file_path: str) -> str:
     """Read a source file from a morphe repo.
 
     Args:
-        repo: one of 'morphe-patches', 'instagram-library', 'morphe-patcher'
+        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
+              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         file_path: relative path within the repo (e.g. 'patches/HideReshareButtonPatch.kt')
     """
     return read_file(repo, file_path)
@@ -31,7 +32,8 @@ def repo_list_files(repo: str, subdir: str = "", extension: str = "") -> str:
     """List files in a morphe repo.
 
     Args:
-        repo: one of 'morphe-patches', 'instagram-library', 'morphe-patcher'
+        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
+              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         subdir: optional subdirectory to list within the repo
         extension: optional file extension filter, e.g. '.kt', '.java', '.smali'
     """
@@ -44,7 +46,8 @@ def repo_grep(repo: str, pattern: str, extension: str = ".kt") -> str:
     Useful to find usages of a Fingerprint, class name, method, or smali opcode.
 
     Args:
-        repo: one of 'morphe-patches', 'instagram-library', 'morphe-patcher'
+        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
+              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         pattern: text or regex pattern to search for
         extension: file extension to search in, default '.kt'
     """

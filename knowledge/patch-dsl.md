@@ -135,6 +135,26 @@ Available `PreferenceScreen` buckets (YouTube): `ADS`, `FEED`, `GENERAL`, `PLAYE
 `SEEKBAR`, `SWIPE_CONTROLS`, `RETURN_YOUTUBE_DISLIKE`, `SPONSORBLOCK`, `MISC`, `VIDEO`,
 `ALTERNATIVE_THUMBNAILS`.
 
+## Shared library (official-patches-library)
+
+Every patch bundle (`official-patches`, `brosssh-patches`, `hoodles-patches`) depends on the shared
+`official-patches-library` repo instead of reimplementing common patch/extension code. It publishes two
+artifacts:
+
+```kotlin
+// patches/build.gradle.kts
+implementation(libs.morphe.patches.library)        // app.morphe:morphe-patches-library — shared patches/utils
+
+// extensions/<app>/build.gradle.kts
+compileOnly(libs.morphe.extensions.library)         // app.morphe:morphe-extensions-library — Utils, Logger, Setting, UI helpers
+```
+
+Declare the version catalog entries in `gradle/libs.versions.toml` pointing at `app.morphe:morphe-patches-library`
+/ `app.morphe:morphe-extensions-library` — that's the entire setup for a new bundle, resolved from the
+project's configured Maven repo. See `docs_read("SYSTEM")` (the "official-patches-library" section) for
+the full breakdown of what each artifact provides and the local composite-build option for active
+development against the library source.
+
 ## File and package conventions
 
 ```

@@ -13,3 +13,6 @@
 [submodule "official-patcher"]
 	path = official-patcher
 	url = https://github.com/morpheapp/morphe-patcher
+[submodule "instagram-morphe-patches-library"]
+	path = instagram-morphe-patches-library
+	url = https://github.com/brosssh/instagram-morphe-patches-library
