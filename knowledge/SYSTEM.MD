@@ -48,6 +48,9 @@ instagram-library/    ← shared Java extension classes for Instagram
 - **Smali injection**: modifying Dalvik bytecode using `addInstructions()`, `replaceInstruction()`, `addInstructionsWithLabels()`, etc.
 - **instructionMatches**: list of matched filter positions within the fingerprinted method, used to find exact injection points
 - **Litho filter**: a filter applied to Meta's Litho component framework, used heavily in Instagram and YouTube to hide UI components
+- **Stub**: a compile-time stand-in for a class extension code can't link against directly — either a
+  hand-written copy in a `:stub` Gradle module (known class names), or an interface injected onto an
+  obfuscated `ClassDef` at patch time (`docs_read("stubbing")`)
 
 ---
 
@@ -227,6 +230,9 @@ internal object SetPivotBarVisibilityFingerprint : Fingerprint(
 5. Access `fingerprint.method` (mutable) for writing, `fingerprint.originalMethod` (immutable) for reading only
 6. Multiple modifications to the same method: work from **last index to first** to preserve correct indices
 7. If a match may not exist, use `methodOrNull` / `matchOrNull` to avoid exceptions
+8. To find every method a fingerprint matches (not just the first), use `matchAll()` /
+   `matchAllOrNull()`, optionally with an `IntRange` to validate the expected match count
+   (e.g. `fingerprint.matchAll(2..3)`). See `docs_read("fingerprinting")` for the full API.
 
 ---
 
@@ -295,6 +301,24 @@ val myPatch = bytecodePatch(name = "My patch") {
 ```
 
 The extension constant is usually a `private const val EXTENSION_CLASS = "Lapp/morphe/extension/..."`.
+
+### Stubbing
+
+Extensions sometimes need to call methods on classes that belong to the **target app**, not to Morphe,
+or even on classes whose name is **obfuscated** and only discoverable via a `Fingerprint` at patch time.
+Morphe has two distinct stubbing techniques for this — full details, code, and the comparison between
+them are in `docs_read("stubbing")`:
+
+1. **Compile-time source stubs** — for real, named classes (app libraries, Android SDK). A hand-written
+   copy lives in an `:stub` Gradle module (e.g. `extensions/<app>/stub/...`) and is wired in as
+   `compileOnly(project(":extensions:<app>:stub"))`, so it's on the compile classpath only — excluded
+   from the runtime/packaged DEX, where the real app class is used instead.
+2. **Bytecode interface injection** — for obfuscated classes. The patch finds the class via a
+   `Fingerprint`, then directly mutates its `ClassDef` at patch time: adds an interface declared in the
+   extension (`classDef.interfaces.add(EXTENSION_INTERFACE)`) and a `patch_`-prefixed method
+   (`classDef.methods.add(ImmutableMethod(...))`) whose body bridges to the real (now-known) obfuscated
+   member. See `VideoInformationPatch.kt` (`patch_getQualityName`, `patch_setQuality`, `patch_seekTo`)
+   and `NavigationBarHookPatch.kt#L213-244` (`patch_getNavigationIcon`).
 
 ---
 

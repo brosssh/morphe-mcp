@@ -3,7 +3,6 @@ from mcp.server.transport_security import TransportSecuritySettings
 
 from tools.files import read_file, list_files, grep_codebase
 from tools.docs import get_system_instructions, search_docs, list_docs, read_doc
-from config import HOST, PORT
 
 mcp = FastMCP(
     "morphe-knowledge",
@@ -85,4 +84,4 @@ def docs_read(name: str) -> str:
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="streamable-http")

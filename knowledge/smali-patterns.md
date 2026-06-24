@@ -103,6 +103,43 @@ MyFeatureFlagFingerprint.let {
 
 The extension method signature must match `(Z)Z` (takes the original boolean, returns the override).
 
+## Adding a method to a class (ImmutableMethod)
+
+Beyond editing existing instructions, you can add a brand-new method directly to a matched `ClassDef` —
+this is how obfuscated classes get a stable, named entry point that extension code can call. See
+`docs_read("stubbing")` for the full obfuscated-class-stubbing technique this enables.
+
+```kotlin
+someFingerprint.classDef.apply {
+    methods.add(
+        ImmutableMethod(
+            type,                       // defining class = this same class
+            "patch_methodName",
+            listOf(/* ImmutableMethodParameter("J", null, "time"), ... */),
+            "V",                         // return type descriptor
+            AccessFlags.PUBLIC.value or AccessFlags.FINAL.value,
+            null, null,
+            MutableMethodImplementation(2),   // register count for the new method body
+        ).toMutable().apply {
+            addInstructions(
+                0,
+                """
+                    # method body — typically bridges to a real member found via fingerprint
+                    return-void
+                """
+            )
+        }
+    )
+}
+```
+
+To make the new method satisfy a contract the extension can reference by type (not by the obfuscated
+class name), also add an interface declared on the extension side before adding the method:
+
+```kotlin
+classDef.interfaces.add(EXTENSION_INTERFACE_DESCRIPTOR)  // e.g. "Lapp/morphe/extension/.../MyInterface;"
+```
+
 ## Smali type descriptors
 
 | Java type | Smali descriptor |

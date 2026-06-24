@@ -135,7 +135,27 @@ MyFingerprint.let {
 
 If you need to re-query indices after a modification, call `clearMatch()` then `match()`.
 
-## matchAllOrNull — match every occurrence
+## matchAll — match every occurrence
+
+A fingerprint matches a single method by default (the first one found, cached). `matchAll` variants
+instead search **every method in scope** and return a `List<Match>`:
+
+```kotlin
+// Across the whole app
+fingerprint.matchAll()          // List<Match>, throws PatchException if none match
+fingerprint.matchAllOrNull()    // List<Match>?, null if none match
+
+// Restricted to one class (e.g. a class already found via classFingerprint)
+fingerprint.matchAll(classDef)          // throws if none match
+fingerprint.matchAllOrNull(classDef)    // null if none match
+
+// Validate how many matches are expected — throws PatchException if the count
+// falls outside the range. A range including 0 is allowed (returns an empty list).
+fingerprint.matchAll(2 .. 3)
+fingerprint.matchAll(classDef, 0 .. 1)
+```
+
+Basic usage — replace every const-string match for a given string literal:
 
 ```kotlin
 val filter = string("some string")
@@ -146,6 +166,32 @@ Fingerprint(filters = listOf(filter)).matchAllOrNull()?.forEach { match ->
     }
 }
 ```
+
+Real example, `VideoInformationPatch.kt` — the channel-info method exists once per video type
+(regular + Shorts, and possibly MDX casting), so the fingerprint is expected to match 2 or 3 times.
+Passing the range both documents that expectation and fails loudly if a future APK update changes it:
+
+```kotlin
+ChannelInformationFingerprint.let {
+    val matches = it.matchAll(2 .. 3)
+
+    val playerResponseType = matches.first().method.parameterTypes.first().toString()
+
+    // ... build a shared helper method once, using info derived from any one match ...
+
+    // ... then hook every matched method (regular, Shorts, and MDX if present):
+    matches.forEach { match ->
+        match.method.addInstruction(
+            0,
+            "invoke-direct { p0, p1 }, ${match.classDef.type}->setChannelInformation($playerResponseType)V"
+        )
+    }
+}
+```
+
+Use `matchAll(range)` instead of plain `matchAll()` whenever the number of matches is a meaningful
+invariant you want validated — an unexpected count usually means the obfuscation pattern changed and
+the patch needs review, rather than silently hooking the wrong number of call sites.
 
 ## Manual matching
 
