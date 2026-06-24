@@ -86,6 +86,100 @@ In smali, call methods from the extension using their full Smali descriptor:
 invoke-static {}, Lapp/morphe/extension/youtube/patches/components/AdsFilter;->filterAds()Z
 ```
 
+**Don't call `extendWith` directly inside a feature patch.** Across `official-patches` no feature patch
+calls `extendWith` itself — it's always wrapped once in a small, reusable patch, and feature patches
+`dependsOn` that patch instead. This way the extension is declared in exactly one place even if many
+patches need it, and the patcher only runs that dependency once no matter how many patches depend on it.
+
+```kotlin
+// Bad — extendWith called directly in a feature patch
+val myFeaturePatch = bytecodePatch(name = "My feature") {
+    extendWith("my-feature.mpe")
+    execute { ... }
+}
+```
+
+```kotlin
+// Good — wrap it once, reuse via dependsOn. official-patches uses the sharedExtensionPatch() helper
+// from official-patches-library for this (see app/morphe/patches/youtube/misc/extension/SharedExtensionPatch.kt):
+val sharedExtensionPatch = sharedExtensionPatch(
+    listOf("youtube", "shared-youtube"),
+    applicationInitHook,
+)
+
+// instagram-morphe-patches-library does the same for Instagram:
+val instagramExtensionPatch = sharedExtensionPatch(
+    "instagram",
+    ExtensionHook(Fingerprint(name = "onCreate", definingClass = "/InstagramAppShell;")),
+)
+
+// Feature patches depend on it — never call extendWith themselves:
+val myFeaturePatch = bytecodePatch(name = "My feature") {
+    dependsOn(instagramExtensionPatch)
+    execute { ... }
+}
+```
+
+If an extension is genuinely only ever used by one patch, a hand-written `bytecodePatch { extendWith(...) }`
+without the `sharedExtensionPatch()` helper is fine — the rule is about *where* `extendWith` is called
+(its own dedicated patch, depended on via `dependsOn`), not about always using that specific helper.
+
+## Composing patches from data (factory-function pattern)
+
+A patch doesn't have to be a fixed `val` — a function that *returns* a `bytecodePatch(...)` lets you
+generate many small, similarly-shaped patches from plain Kotlin data, instead of hand-writing one file
+per case. `instagram-morphe-patches-library`'s `overrideMobileConfigBooleanFlag` is a real example: it
+overrides a single boolean feature flag by appending one entry to a shared `Map` at patch time.
+
+```kotlin
+// instagram-morphe-patches-library — the shared "infra" patch: hooks the flag lookup once,
+// finds the map-population point once. Other patches never touch this fingerprinting directly.
+private val overrideMobileConfigBooleanFlagPatch = bytecodePatch {
+    dependsOn(instagramExtensionPatch)
+    execute {
+        // ... hooks GetBoolValueForFlagFingerprint to check EXTENSION_CLASS.OVERRIDES first ...
+    }
+}
+
+// The factory function: each call produces a distinct, tiny patch whose only job is to inject
+// one `OVERRIDES.put(key, value)` smali instruction into the extension's <clinit>.
+fun overrideMobileConfigBooleanFlag(
+    name: String? = null,
+    description: String? = null,
+    default: Boolean = true,
+    override: Pair<String, Boolean>,
+) = bytecodePatch(name = name, description = description, default = default) {
+    dependsOn(overrideMobileConfigBooleanFlagPatch)
+    execute {
+        // ... adds "OVERRIDES.put(override.first, override.second)" to GetOverridesFingerprint's <clinit> ...
+    }
+}
+```
+
+A feature patch then depends on one or more parameterized instances — each contributes its own entry,
+and only the entries for *enabled* feature patches end up in the build, since `dependsOn` only runs for
+patches the user actually has on:
+
+```kotlin
+// brosssh-patches/.../HideInstantsPatch.kt
+val hideInstantsPatch = bytecodePatch(
+    name = "Hide Instants",
+    description = "Hides Instants from DMs page.",
+    default = false,
+) {
+    compatibleWith(COMPATIBILITY_INSTAGRAM)
+
+    dependsOn(
+        overrideMobileConfigBooleanFlag(override = "71567::9" to false),
+        overrideMobileConfigBooleanFlag(override = "71567::42" to false),
+    )
+}
+```
+
+Use this pattern when a patch's only real variation is data (a flag ID, a string, a pair) rather than
+behavior — it avoids both duplicated boilerplate files and a single patch in `:options` (those are for
+the *end user* to toggle at install time, not for the patch *author* to generate variants at build time).
+
 ## execute block
 
 The execute block runs in a `BytecodePatchContext` (or `ResourcePatchContext`/`RawResourcePatchContext`).

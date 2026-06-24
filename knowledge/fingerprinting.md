@@ -75,6 +75,49 @@ internal object MyFingerprint : Fingerprint(
 )
 ```
 
+This shows every field a `Fingerprint` can take — real fingerprints should use as few of these as
+possible. See "Keep fingerprints minimal" below.
+
+## Keep fingerprints minimal
+
+If `definingClass` + `name` alone uniquely identify the target method, add nothing else — no
+`accessFlags`, `returnType`, `parameters`, `strings`, or `filters`. Extra fields add nothing once the
+method is already uniquely identified, and only make the fingerprint *more* fragile (e.g. an
+`accessFlags` check that breaks if a future APK version changes a method's visibility).
+
+```kotlin
+// official-patches: extension method names are unique by construction, so name + definingClass
+// is already a precise match — nothing else is needed.
+internal object ShowOldPlaybackSpeedMenuExtensionFingerprint : Fingerprint(
+    definingClass = EXTENSION_CLASS,
+    name = "showOldPlaybackSpeedMenu"
+)
+
+// instagram-morphe-patches-library: same idea for a non-obfuscated app entry point.
+Fingerprint(
+    name = "onCreate",
+    definingClass = "/InstagramAppShell;",
+)
+```
+
+Only add `returnType` / `parameters` when the name alone is ambiguous — i.e. the method is overloaded.
+`Activity.onCreate` is a real case: the SDK declares both `onCreate(Bundle)` and
+`onCreate(Bundle, PersistableBundle)`, so omitting `parameters` would let the fingerprint match either
+one nondeterministically:
+
+```kotlin
+internal object GoogleApiActivityOnCreateFingerprint : Fingerprint(
+    definingClass = "Lcom/google/android/gms/common/api/GoogleApiActivity;",
+    name = "onCreate",
+    returnType = "V",
+    parameters = listOf("Landroid/os/Bundle;"),  // disambiguates from onCreate(Bundle, PersistableBundle)
+)
+```
+
+`filters` should only be added when you need to locate something *inside* the method body (an
+instruction index to inject at) — never just to "help" identify the method itself once
+`definingClass` + `name` (plus disambiguating `returnType`/`parameters` if needed) already do that.
+
 ## classFingerprint — narrowing to a class
 
 Use when you want to restrict fingerprint matching to the class found by another fingerprint:
@@ -206,7 +249,8 @@ val match = MyFingerprint.match(classes)
 ## Rules
 
 1. Never use obfuscated names (`definingClass`, `name`) — they change every APK update
-2. If a class/method is NOT obfuscated (e.g. framework classes), always use `definingClass` + `name`
+2. If a class/method is NOT obfuscated (e.g. framework classes), always use `definingClass` + `name` —
+   and add nothing else unless the method is overloaded (see "Keep fingerprints minimal" above)
 3. Prefer `string()` and `literal()` over raw opcode sequences
 4. `OpcodesFilter.opcodesToFilters()` requires exact opcodes with no gaps — last resort only
 5. Fingerprints match only once by default (cached) — shared safely between patches
