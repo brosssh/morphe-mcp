@@ -1,4 +1,6 @@
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
+
 from tools.files import read_file, list_files, grep_codebase
 from tools.docs import get_system_instructions, search_docs, list_docs, read_doc
 from config import HOST, PORT
@@ -6,6 +8,9 @@ from config import HOST, PORT
 mcp = FastMCP(
     "morphe-knowledge",
     instructions=get_system_instructions(),
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+    )
 )
 
 
@@ -80,9 +85,4 @@ def docs_read(name: str) -> str:
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
-    if "--sse" in sys.argv:
-        print(f"Starting SSE on {HOST}:{PORT}")
-        mcp.run(transport="sse")
-    else:
-        mcp.run()
+    mcp.run()
