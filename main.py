@@ -22,7 +22,9 @@ def repo_read_file(repo: str, file_path: str) -> str:
     Args:
         repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
               'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
-        file_path: relative path within the repo (e.g. 'patches/HideReshareButtonPatch.kt')
+        file_path: relative path within the repo (e.g.
+            'patches/src/main/kotlin/app/morphe/patches/youtube/layout/hide/general/HideLayoutComponentsPatch.kt'
+            in 'official-patches' — prefer examples from 'official-patches' (Morphe Patches) first)
     """
     return read_file(repo, file_path)
 
