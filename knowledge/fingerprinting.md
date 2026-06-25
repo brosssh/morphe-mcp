@@ -178,6 +178,10 @@ MyFingerprint.let {
 
 If you need to re-query indices after a modification, call `clearMatch()` then `match()`.
 
+When the block's purpose is mutating the method itself, prefer `fingerprint.method.apply { ... }` over
+`with(fingerprint.method) { ... }` — `apply` returns the (now-mutated) method, `with` returns the
+block's last expression. See `smali-patterns.md` → "apply vs with" for the full rule and examples.
+
 ## matchAll — match every occurrence
 
 A fingerprint matches a single method by default (the first one found, cached). `matchAll` variants

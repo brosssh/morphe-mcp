@@ -16,6 +16,37 @@ Maximum usable register index is **v15** for most opcodes (range: v0–v15). Som
 `const-wide`) support higher indices but `addInstructions` without `cloneMutableAndPreserveParameters`
 will fail if you exceed available registers.
 
+## apply vs with — mutating a method
+
+When a patch is **mutating the method itself** (calling `addInstructions`, `addInstruction`,
+`replaceInstruction`, `removeInstruction`, adding fields/methods to a `classDef`, etc.), use
+`method.apply { ... }`, not `with(method) { ... }`. `apply` returns the receiver — so the block reads
+as "make these changes to this method" and you still hold a reference to the (now-mutated) method
+afterward. `with` returns the block's *last expression*, not the receiver — it's for grouping reads off
+a receiver to compute some other value, not for signaling a mutation.
+
+```kotlin
+// Mutating the method — use .apply
+MyFingerprint.method.apply {
+    addInstructions(0, "invoke-static {}, LMyExtension;->hook()V")
+}
+```
+
+```kotlin
+// Read-only scoping (no mutation of the receiver itself) — with() is fine here.
+// Real example, VideoInformationPatch.kt: classDef is read repeatedly, but nothing mutates
+// MdxPlayerDirectorSetVideoStageFingerprint or its classDef directly in this block.
+with(MdxPlayerDirectorSetVideoStageFingerprint) {
+    val mdxInitMethod = classDef.methods.first { MethodUtil.isConstructor(it) }
+    val mdxSeekFingerprintResultMethod = MdxSeekFingerprint.match(classDef).method
+    addPlayerInterfaceMethods(classDef, mdxSeekFingerprintResultMethod, ...)
+}
+```
+
+`.let { it.method... }` is unrelated to this distinction — it's used to unwrap a `Fingerprint`'s match
+result (`it.method`, `it.classDef`, `it.instructionMatches`) when you need `it` as a value rather than
+as the implicit receiver; see `fingerprinting.md`.
+
 ## Common injection patterns
 
 ### Early return with feature flag
