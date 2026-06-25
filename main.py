@@ -16,26 +16,25 @@ mcp = FastMCP(
 # ── Repo tools ────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def repo_read_file(repo: str, file_path: str) -> str:
+def repo_read_file(file_path: str, repo: str = "official-patches") -> str:
     """Read a source file from a morphe repo.
 
     Args:
-        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
-              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         file_path: relative path within the repo (e.g.
-            'patches/src/main/kotlin/app/morphe/patches/youtube/layout/hide/general/HideLayoutComponentsPatch.kt'
-            in 'official-patches' — prefer examples from 'official-patches' (Morphe Patches) first)
+            'patches/src/main/kotlin/app/morphe/patches/youtube/layout/hide/general/HideLayoutComponentsPatch.kt')
+        repo: one of 'official-patches' (default — Morphe Patches, prefer this first), 'official-patches-library',
+              'official-patcher', 'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
     """
     return read_file(repo, file_path)
 
 
 @mcp.tool()
-def repo_list_files(repo: str, subdir: str = "", extension: str = "") -> str:
+def repo_list_files(repo: str = "official-patches", subdir: str = "", extension: str = "") -> str:
     """List files in a morphe repo.
 
     Args:
-        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
-              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
+        repo: one of 'official-patches' (default — Morphe Patches, prefer this first), 'official-patches-library',
+              'official-patcher', 'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         subdir: optional subdirectory to list within the repo
         extension: optional file extension filter, e.g. '.kt', '.java', '.smali'
     """
@@ -43,14 +42,14 @@ def repo_list_files(repo: str, subdir: str = "", extension: str = "") -> str:
 
 
 @mcp.tool()
-def repo_grep(repo: str, pattern: str, extension: str = ".kt") -> str:
+def repo_grep(pattern: str, repo: str = "official-patches", extension: str = ".kt") -> str:
     """Grep for a pattern across source files in a morphe repo.
     Useful to find usages of a Fingerprint, class name, method, or smali opcode.
 
     Args:
-        repo: one of 'official-patches', 'official-patches-library', 'official-patcher',
-              'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         pattern: text or regex pattern to search for
+        repo: one of 'official-patches' (default — Morphe Patches, prefer this first), 'official-patches-library',
+              'official-patcher', 'brosssh-patches', 'hoodles-patches', 'instagram-morphe-patches-library' (unofficial)
         extension: file extension to search in, default '.kt'
     """
     return grep_codebase(repo, pattern, extension)
