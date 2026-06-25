@@ -86,13 +86,14 @@ In smali, call methods from the extension using their full Smali descriptor:
 invoke-static {}, Lapp/morphe/extension/youtube/patches/components/AdsFilter;->filterAds()Z
 ```
 
-**Don't call `extendWith` directly inside a feature patch.** Across `official-patches` no feature patch
-calls `extendWith` itself — it's always wrapped once in a small, reusable patch, and feature patches
-`dependsOn` that patch instead. This way the extension is declared in exactly one place even if many
-patches need it, and the patcher only runs that dependency once no matter how many patches depend on it.
+**Best practice: avoid calling `extendWith` directly inside a feature patch.** Nothing in the patcher
+enforces this, but across `official-patches` no feature patch calls `extendWith` itself — it's wrapped
+once in a small, reusable patch, and feature patches `dependsOn` that patch instead. Worth following
+because the extension stays declared in exactly one place even if many patches need it, and the patcher
+only runs that dependency once no matter how many patches depend on it.
 
 ```kotlin
-// Bad — extendWith called directly in a feature patch
+// Avoid — extendWith called directly in a feature patch
 val myFeaturePatch = bytecodePatch(name = "My feature") {
     extendWith("my-feature.mpe")
     execute { ... }
@@ -100,7 +101,7 @@ val myFeaturePatch = bytecodePatch(name = "My feature") {
 ```
 
 ```kotlin
-// Good — wrap it once, reuse via dependsOn. official-patches uses the sharedExtensionPatch() helper
+// Preferred — wrap it once, reuse via dependsOn. official-patches uses the sharedExtensionPatch() helper
 // from official-patches-library for this (see app/morphe/patches/youtube/misc/extension/SharedExtensionPatch.kt):
 val sharedExtensionPatch = sharedExtensionPatch(
     listOf("youtube", "shared-youtube"),
@@ -113,7 +114,7 @@ val instagramExtensionPatch = sharedExtensionPatch(
     ExtensionHook(Fingerprint(name = "onCreate", definingClass = "/InstagramAppShell;")),
 )
 
-// Feature patches depend on it — never call extendWith themselves:
+// Feature patches depend on it instead of calling extendWith themselves:
 val myFeaturePatch = bytecodePatch(name = "My feature") {
     dependsOn(instagramExtensionPatch)
     execute { ... }
@@ -121,8 +122,8 @@ val myFeaturePatch = bytecodePatch(name = "My feature") {
 ```
 
 If an extension is genuinely only ever used by one patch, a hand-written `bytecodePatch { extendWith(...) }`
-without the `sharedExtensionPatch()` helper is fine — the rule is about *where* `extendWith` is called
-(its own dedicated patch, depended on via `dependsOn`), not about always using that specific helper.
+without the `sharedExtensionPatch()` helper is fine — the convention is about *where* `extendWith` is
+called (its own dedicated patch, depended on via `dependsOn`), not about always using that specific helper.
 
 ## Composing patches from data (factory-function pattern)
 
@@ -257,7 +258,9 @@ patches/src/main/kotlin/app/morphe/patches/<app>/<category>/
   MyFeaturePatch.kt ← patch implementation
 ```
 
-- Top-level patch `val` must be annotated `@Suppress("unused")`
+- Top-level patch `val`s are only ever loaded reflectively (by `PatchLoader`), never referenced directly
+  from other code, so Kotlin's compiler flags them as "unused". Annotating with `@Suppress("unused")`
+  just silences that warning — it's suggested for a clean build, not required for the patch to work.
 - Only patches with a `name` are loaded by `PatchLoader`
 - Keep extension-only logic out of patch code (smali should just delegate to extension classes)
 - Document non-obvious decisions with inline comments

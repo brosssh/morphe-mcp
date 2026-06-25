@@ -401,9 +401,9 @@ BoldIconsFeatureFlagFingerprint.let {
 Extensions are Java/Kotlin classes compiled to DEX and merged into the APK via `extendWith("name.mpe")`.
 They live under `extensions/` in the patches repo.
 
-`extendWith` should never be called directly inside a feature patch — wrap it once in a dedicated patch
-and `dependsOn` that instead (see `docs_read("patch-dsl")` → "extendWith" for the full convention and
-real examples from `official-patches`/`instagram-morphe-patches-library`):
+Best practice (not enforced by the patcher): avoid calling `extendWith` directly inside a feature patch
+— wrap it once in a dedicated patch and `dependsOn` that instead (see `docs_read("patch-dsl")` →
+"extendWith" for the full convention and real examples from `official-patches`/`instagram-morphe-patches-library`):
 
 ```kotlin
 val sharedExtensionPatch = bytecodePatch { extendWith("my-extension.mpe") }
@@ -462,4 +462,5 @@ Available screens: `ADS`, `FEED`, `GENERAL`, `PLAYER`, `SHORTS`, `SEEKBAR`,
 - Keep patches minimal — complex logic belongs in extensions, not inline smali
 - Document non-obvious patching decisions in comments
 - File structure: one `Fingerprints.kt` + one `*Patch.kt` per package
-- `@Suppress("unused")` on top-level patch vals (they are loaded reflectively)
+- Suggested (not required): `@Suppress("unused")` on top-level patch vals — they're loaded reflectively,
+  so the compiler flags them as unused; the annotation just silences that warning

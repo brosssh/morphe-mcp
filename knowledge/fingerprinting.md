@@ -258,4 +258,5 @@ val match = MyFingerprint.match(classes)
 3. Prefer `string()` and `literal()` over raw opcode sequences
 4. `OpcodesFilter.opcodesToFilters()` requires exact opcodes with no gaps — last resort only
 5. Fingerprints match only once by default (cached) — shared safely between patches
-6. Use `@Suppress("unused")` on top-level patch vals loaded reflectively
+6. Suggested (not required): `@Suppress("unused")` on top-level patch vals — they're loaded
+   reflectively so the compiler flags them as unused; the annotation just silences that warning
