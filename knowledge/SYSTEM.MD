@@ -21,9 +21,9 @@ conventions; only consult `instagram-morphe-patches-library` for Instagram-speci
 **Official patcher docs** are in `official-patcher/docs/` — read them when asked about patcher internals.
 
 **Knowledge docs:** Before answering, check `docs_list()` for the available knowledge documents
-(currently `fingerprinting`, `patch-dsl`, `smali-patterns`, `stubbing`) and `docs_read(name)` any that
-are relevant to the question — they contain conventions and real examples that aren't always obvious
-from a quick repo read. Use `docs_search(query)` if you're not sure which doc covers a topic.
+(currently `fingerprinting`, `patch-dsl`, `smali-patterns`, `stubbing`, `tools`) and `docs_read(name)`
+any that are relevant to the question — they contain conventions and real examples that aren't always
+obvious from a quick repo read. Use `docs_search(query)` if you're not sure which doc covers a topic.
 
 ---
 
